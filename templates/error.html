@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block titulo %}Error — Reportes AV{% endblock %}
+{% block contenido %}
+<section class="tarjeta vacio">
+  <h2>Error de conexión con la base de datos</h2>
+  <p class="notas">{{ mensaje }}</p>
+  <a class="btn" href="{{ url_for('index') }}">Volver</a>
+</section>
+{% endblock %}

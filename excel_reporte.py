@@ -26,6 +26,10 @@ def nombre_archivo(iso):
 
 
 def generar(reg):
+    if not os.path.exists(RUTA_PLANTILLA):
+        raise RuntimeError(
+            'No se encontró plantilla.xlsx junto a la aplicación; '
+            'no es posible generar el Excel.')
     wb = openpyxl.load_workbook(RUTA_PLANTILLA)
     ws = wb['LENIN']
     ws['B3'] = texto_fecha(reg['fecha'])

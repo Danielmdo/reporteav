@@ -20,8 +20,8 @@
 </div>
 
 <section class="resumen">
-  <div class="metrica grande"><span class="valor">{{ r['asist_total'] }}</span><span class="etiq">asistencia presencial total</span></div>
-  <div class="metrica"><span class="valor">{{ r['en_linea'] }}</span><span class="etiq">asistencia en línea</span></div>
+  <div class="metrica grande"><span class="valor">{{ r['asist_total'] | numero }}</span><span class="etiq">asistencia presencial total</span></div>
+  <div class="metrica"><span class="valor">{{ r['en_linea'] | numero }}</span><span class="etiq">asistencia en línea</span></div>
   <div class="metrica"><span class="valor">{{ r['entrada_total'] | dinero }}</span><span class="etiq">entrada total (DLLS)</span></div>
   <div class="metrica"><span class="valor">{{ r['clima'] or '—' }}</span><span class="etiq">clima</span></div>
 </section>
@@ -37,9 +37,9 @@
       </tr>
     </thead>
     <tbody>
-      <tr><th class="concepto">Asistentes al servicio</th>{% for s, h in servicios %}<td class="num">{{ r['asist_' ~ s] }}</td>{% endfor %}</tr>
-      <tr><th class="concepto">Asistencia niños / NEON</th>{% for s, h in servicios %}<td class="num">{{ r['ninos_' ~ s] }}</td>{% endfor %}</tr>
-      <tr><th class="concepto">Total de voluntarios</th>{% for s, h in servicios %}<td class="num">{{ r['vol_total_' ~ s] }}</td>{% endfor %}</tr>
+      <tr><th class="concepto">Asistentes al servicio</th>{% for s, h in servicios %}<td class="num">{{ r['asist_' ~ s] | numero }}</td>{% endfor %}</tr>
+      <tr><th class="concepto">Asistencia niños / NEON</th>{% for s, h in servicios %}<td class="num">{{ r['ninos_' ~ s] | numero }}</td>{% endfor %}</tr>
+      <tr><th class="concepto">Total de voluntarios</th>{% for s, h in servicios %}<td class="num">{{ r['vol_total_' ~ s] | numero }}</td>{% endfor %}</tr>
     </tbody>
   </table>
   </div>

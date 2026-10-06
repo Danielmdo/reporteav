@@ -34,8 +34,8 @@
 
 <section class="resumen">
   <div class="metrica"><span class="valor">{{ agg['n'] }}</span><span class="etiq">reportes</span></div>
-  <div class="metrica"><span class="valor">{{ agg['a'] }}</span><span class="etiq">asistencia presencial</span></div>
-  <div class="metrica"><span class="valor">{{ agg['e'] }}</span><span class="etiq">asistencia en línea</span></div>
+  <div class="metrica"><span class="valor">{{ agg['a'] | numero }}</span><span class="etiq">asistencia presencial</span></div>
+  <div class="metrica"><span class="valor">{{ agg['e'] | numero }}</span><span class="etiq">asistencia en línea</span></div>
   <div class="metrica"><span class="valor">{{ agg['t'] | dinero }}</span><span class="etiq">entrada total</span></div>
 </section>
 
@@ -64,12 +64,12 @@
         <td><a class="fecha" href="{{ url_for('detalle', rid=r['id']) }}">{{ r['fecha'] | fecha_corta }}</a></td>
         <td>{{ r['predicador'] }}</td>
         <td class="tema">{{ r['tema'] or '—' }}</td>
-        <td class="num">{{ r['asist_s1'] or 0 }}</td>
-        <td class="num">{{ r['asist_s2'] or 0 }}</td>
-        <td class="num">{{ r['asist_s3'] or 0 }}</td>
-        <td class="num">{{ (r['ninos_s1'] or 0) + (r['ninos_s2'] or 0) + (r['ninos_s3'] or 0) }}</td>
-        <td class="num fuerte">{{ r['asist_total'] or 0 }}</td>
-        <td class="num">{{ r['en_linea'] or 0 }}</td>
+        <td class="num">{{ r['asist_s1'] | numero }}</td>
+        <td class="num">{{ r['asist_s2'] | numero }}</td>
+        <td class="num">{{ r['asist_s3'] | numero }}</td>
+        <td class="num">{{ ((r['ninos_s1'] or 0) + (r['ninos_s2'] or 0) + (r['ninos_s3'] or 0)) | numero }}</td>
+        <td class="num fuerte">{{ r['asist_total'] | numero }}</td>
+        <td class="num">{{ r['en_linea'] | numero }}</td>
         <td class="num">{{ r['entrada_total'] | dinero }}</td>
         <td class="acciones">
           <a href="{{ url_for('detalle', rid=r['id']) }}">Ver</a>

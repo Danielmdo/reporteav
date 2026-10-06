@@ -2,7 +2,6 @@
 import csv
 import io
 import os
-import sqlite3
 from datetime import date, datetime
 
 from flask import (Flask, abort, flash, redirect, render_template, request,
@@ -10,9 +9,9 @@ from flask import (Flask, abort, flash, redirect, render_template, request,
 
 import campos
 import excel_reporte
+from basedatos import conectar
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, 'datos', 'reportes.db')
 
 DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
 MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
@@ -44,7 +43,7 @@ COLUMNAS_CSV = ['id', 'fecha', 'predicador', 'tema', 'clima',
                 'en_linea', 'entrada_total', 'notas', 'creado_en']
 
 app = Flask(__name__)
-app.secret_key = 'reportes-av-clave-local'
+app.secret_key = os.environ.get('CLAVE_SECRETA') or 'reportes-av-clave-local'
 
 
 @app.template_filter('fecha_larga')
@@ -72,32 +71,13 @@ def dinero(v):
     return f'$ {v:,.2f}'
 
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    defs = ['id INTEGER PRIMARY KEY AUTOINCREMENT',
-            'fecha TEXT NOT NULL',
-            'clima TEXT',
-            "predicador TEXT NOT NULL DEFAULT ''",
-            'tema TEXT']
-    defs += [f'{c} INTEGER' for c in campos.COLUMNAS_ENTEROS]
-    defs += [f'{c} REAL' for c in campos.COLUMNAS_REALES]
-    defs.append('notas TEXT')
-    defs += [f'{c} REAL' for c in campos.COLUMNAS_CALC]
-    defs += ["creado_en TEXT DEFAULT (datetime('now', 'localtime'))",
-             'actualizado_en TEXT']
-    conn.execute('CREATE TABLE IF NOT EXISTS reportes (\n  '
-                 + ',\n  '.join(defs) + '\n)')
-    conn.execute('CREATE INDEX IF NOT EXISTS idx_reportes_fecha ON reportes (fecha)')
-    conn.execute('CREATE INDEX IF NOT EXISTS idx_reportes_predicador ON reportes (predicador)')
-    conn.commit()
-    conn.close()
+@app.template_filter('numero')
+def numero(v):
+    if v is None:
+        return '—'
+    if isinstance(v, float) and v.is_integer():
+        return int(v)
+    return v
 
 
 def valores_de(fila):
@@ -153,13 +133,14 @@ def leer_formulario():
 
 def guardar(datos, rid=None):
     columnas = TODAS_COLUMNAS + campos.COLUMNAS_CALC
-    conn = get_db()
+    conn = conectar()
     try:
         if rid is None:
             marcadores = ', '.join('?' * len(columnas))
-            sql = f"INSERT INTO reportes ({', '.join(columnas)}) VALUES ({marcadores})"
-            cur = conn.execute(sql, [datos.get(c) for c in columnas])
-            rid = cur.lastrowid
+            sql = (f"INSERT INTO reportes ({', '.join(columnas)}) "
+                   f"VALUES ({marcadores}) RETURNING id")
+            fila = conn.execute(sql, [datos.get(c) for c in columnas]).fetchone()
+            rid = fila[0]
         else:
             datos = dict(datos)
             datos['actualizado_en'] = datetime.now().isoformat(timespec='seconds')
@@ -196,7 +177,7 @@ def construir_filtros(args):
 
 
 def obtener_reporte(rid):
-    conn = get_db()
+    conn = conectar()
     fila = conn.execute('SELECT * FROM reportes WHERE id = ?', (rid,)).fetchone()
     conn.close()
     if fila is None:
@@ -223,7 +204,7 @@ def globales():
 @app.route('/')
 def index():
     donde, params, orden_sql = construir_filtros(request.args)
-    conn = get_db()
+    conn = conectar()
     reportes = conn.execute(
         f'SELECT * FROM reportes {donde} ORDER BY {orden_sql}', params).fetchall()
     agg = conn.execute(
@@ -271,7 +252,7 @@ def detalle(rid):
 
 @app.route('/reporte/<int:rid>/eliminar', methods=['POST'])
 def eliminar(rid):
-    conn = get_db()
+    conn = conectar()
     conn.execute('DELETE FROM reportes WHERE id = ?', (rid,))
     conn.commit()
     conn.close()
@@ -293,7 +274,7 @@ def descargar_excel(rid):
 @app.route('/exportar.csv')
 def exportar_csv():
     donde, params, orden_sql = construir_filtros(request.args)
-    conn = get_db()
+    conn = conectar()
     filas = conn.execute(
         f'SELECT * FROM reportes {donde} ORDER BY {orden_sql}', params).fetchall()
     conn.close()
@@ -307,7 +288,10 @@ def exportar_csv():
                      download_name='reportes.csv', mimetype='text/csv')
 
 
-init_db()
+@app.errorhandler(RuntimeError)
+def error_bd(exc):
+    return render_template('error.html', mensaje=str(exc)), 500
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
