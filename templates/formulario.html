@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ 'Editar reporte' if rid else 'Nuevo reporte' }} — Reportes AV{% endblock %}
+{% macro campo_num(nombre, valor) -%}
+<input class="num" type="number" min="0" step="1" name="{{ nombre }}" value="{{ valor }}">
+{%- endmacro %}
+{% block contenido %}
+<div class="encabezado-pagina">
+  <h1>{{ 'Editar reporte' if rid else 'Nuevo reporte de asistencia' }}</h1>
+</div>
+
+<form method="post">
+  <section class="tarjeta">
+    <h2>Datos generales</h2>
+    <div class="fila-campos">
+      <label>Fecha <span class="req">*</span>
+        <input type="date" name="fecha" value="{{ valores['fecha'] }}" required>
+      </label>
+      <label>Clima
+        <input type="text" name="clima" value="{{ valores['clima'] }}" placeholder="Ej. 30">
+      </label>
+      <label>Predicador <span class="req">*</span>
+        <input type="text" name="predicador" value="{{ valores['predicador'] }}" required>
+      </label>
+      <label>Tema
+        <input type="text" name="tema" value="{{ valores['tema'] }}">
+      </label>
+    </div>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Redes sociales</h2>
+    <p class="ayuda">Corresponden al servicio de las 10:00 a.m., igual que en el Excel. La asistencia en línea se calcula como Rep. 15 seg + Views de YouTube.</p>
+    <div class="fila-campos">
+      {% for campo, etiqueta in redes %}
+      <label>{{ etiqueta }}
+        {{ campo_num(campo, valores[campo]) }}
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% for titulo, grupo in secciones %}
+  <section class="tarjeta">
+    <h2>{{ titulo }}</h2>
+    <div class="tabla-scroll">
+    <table class="tabla-captura">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          {% for s, hora in servicios %}<th>{{ hora }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for campo, etiqueta in grupo %}
+        <tr>
+          <th class="concepto">{{ etiqueta }}</th>
+          {% for s, hora in servicios %}
+          <td>{{ campo_num(campo ~ '_' ~ s, valores[campo ~ '_' ~ s]) }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  {% endfor %}
+
+  <section class="tarjeta">
+    <h2>Kids — asistencia por edad</h2>
+    <div class="tabla-scroll">
+    <table class="tabla-captura">
+      <thead>
+        <tr><th>Edad / grado</th><th>10:00 a.m.</th><th>12:00 p.m.</th></tr>
+      </thead>
+      <tbody>
+        {% for campo, etiqueta in kids %}
+        <tr>
+          <th class="concepto">{{ etiqueta }}</th>
+          <td>{{ campo_num(campo ~ '_s1', valores[campo ~ '_s1']) }}</td>
+          <td>{{ campo_num(campo ~ '_s2', valores[campo ~ '_s2']) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <h3>Servicio de 6:00 p.m.</h3>
+    <p class="ayuda">En el servicio de la tarde el Excel combina las edades en tres celdas (maternal, kinder y primaria).</p>
+    <div class="fila-campos">
+      {% for campo, etiqueta in kids_s3 %}
+      <label>{{ etiqueta }}
+        {{ campo_num(campo ~ '_s3', valores[campo ~ '_s3']) }}
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Sábado 5:00 p.m. y universitarios</h2>
+    <p class="ayuda">El formato original tiene dos columnas de captura (D:E y F); la "reunión general" se calcula por columna en el Excel.</p>
+    <div class="tabla-scroll">
+    <table class="tabla-captura">
+      <thead>
+        <tr><th>Concepto</th><th>Col. D:E</th><th>Col. F</th></tr>
+      </thead>
+      <tbody>
+        {% for campo, etiqueta in sabado %}
+        <tr>
+          <th class="concepto">{{ etiqueta }}</th>
+          <td>{{ campo_num(campo ~ '_de', valores[campo ~ '_de']) }}</td>
+          <td>{{ campo_num(campo ~ '_f', valores[campo ~ '_f']) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <h3>Universitarios</h3>
+    <div class="fila-campos">
+      {% for campo, etiqueta in vector %}
+      <label>{{ etiqueta }}
+        {{ campo_num(campo, valores[campo]) }}
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Grupos de vida</h2>
+    <div class="fila-campos">
+      {% for campo, etiqueta in grupos_vida %}
+      <label>{{ etiqueta }}
+        {{ campo_num(campo, valores[campo]) }}
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Datos financieros (DLLS)</h2>
+    <div class="fila-campos">
+      {% for campo, etiqueta in financieros %}
+      <label>{{ etiqueta }}
+        <input class="num" type="number" min="0" step="0.01" name="{{ campo }}" value="{{ valores[campo] }}">
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Notas</h2>
+    <label>Notas internas (no se escriben en el Excel)
+      <textarea name="notas" rows="3">{{ valores['notas'] }}</textarea>
+    </label>
+  </section>
+
+  <div class="barra-guardar">
+    <button type="submit" class="btn principal">Guardar reporte</button>
+    <a class="btn" href="{{ url_for('index') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

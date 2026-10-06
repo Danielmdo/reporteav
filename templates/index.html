@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block titulo %}Consultar reportes — Reportes AV{% endblock %}
+{% block contenido %}
+<div class="encabezado-pagina">
+  <h1>Reportes de asistencia</h1>
+  <a class="btn principal" href="{{ url_for('nuevo') }}">Nuevo reporte</a>
+</div>
+
+<section class="tarjeta">
+  <form method="get" class="filtros">
+    <label>Buscar
+      <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Predicador, tema o notas">
+    </label>
+    <label>Desde
+      <input type="date" name="desde" value="{{ request.args.get('desde', '') }}">
+    </label>
+    <label>Hasta
+      <input type="date" name="hasta" value="{{ request.args.get('hasta', '') }}">
+    </label>
+    <label>Ordenar por
+      <select name="orden">
+        {% for valor, texto in ordenes %}
+        <option value="{{ valor }}"{% if request.args.get('orden', 'fecha_desc') == valor %} selected{% endif %}>{{ texto }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="botones-filtro">
+      <button class="btn principal" type="submit">Filtrar</button>
+      <a class="btn" href="{{ url_for('index') }}">Limpiar</a>
+      <a class="btn" href="{{ url_for('exportar_csv', **request.args) }}">Exportar CSV</a>
+    </div>
+  </form>
+</section>
+
+<section class="resumen">
+  <div class="metrica"><span class="valor">{{ agg['n'] }}</span><span class="etiq">reportes</span></div>
+  <div class="metrica"><span class="valor">{{ agg['a'] }}</span><span class="etiq">asistencia presencial</span></div>
+  <div class="metrica"><span class="valor">{{ agg['e'] }}</span><span class="etiq">asistencia en línea</span></div>
+  <div class="metrica"><span class="valor">{{ agg['t'] | dinero }}</span><span class="etiq">entrada total</span></div>
+</section>
+
+{% if reportes %}
+<section class="tarjeta">
+  <div class="tabla-scroll">
+  <table class="tabla-lista">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Predicador</th>
+        <th>Tema</th>
+        <th class="num">10:00</th>
+        <th class="num">12:00</th>
+        <th class="num">18:00</th>
+        <th class="num">Niños</th>
+        <th class="num">Total</th>
+        <th class="num">En línea</th>
+        <th class="num">Entrada</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reportes %}
+      <tr>
+        <td><a class="fecha" href="{{ url_for('detalle', rid=r['id']) }}">{{ r['fecha'] | fecha_corta }}</a></td>
+        <td>{{ r['predicador'] }}</td>
+        <td class="tema">{{ r['tema'] or '—' }}</td>
+        <td class="num">{{ r['asist_s1'] or 0 }}</td>
+        <td class="num">{{ r['asist_s2'] or 0 }}</td>
+        <td class="num">{{ r['asist_s3'] or 0 }}</td>
+        <td class="num">{{ (r['ninos_s1'] or 0) + (r['ninos_s2'] or 0) + (r['ninos_s3'] or 0) }}</td>
+        <td class="num fuerte">{{ r['asist_total'] or 0 }}</td>
+        <td class="num">{{ r['en_linea'] or 0 }}</td>
+        <td class="num">{{ r['entrada_total'] | dinero }}</td>
+        <td class="acciones">
+          <a href="{{ url_for('detalle', rid=r['id']) }}">Ver</a>
+          <a href="{{ url_for('descargar_excel', rid=r['id']) }}">Excel</a>
+          <a href="{{ url_for('editar', rid=r['id']) }}">Editar</a>
+          <form method="post" action="{{ url_for('eliminar', rid=r['id']) }}" class="enlinea"
+                onsubmit="return confirm('¿Eliminar el reporte del {{ r['fecha'] | fecha_corta }}?');">
+            <button type="submit" class="enlace peligro">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% else %}
+<section class="tarjeta vacio">
+  <p>No se encontraron reportes.</p>
+  <a class="btn principal" href="{{ url_for('nuevo') }}">Registrar el primero</a>
+</section>
+{% endif %}
+{% endblock %}

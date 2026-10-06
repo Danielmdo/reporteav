@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block titulo %}Reporte del {{ r['fecha'] | fecha_larga }} — Reportes AV{% endblock %}
+{% macro celda(nombre) -%}
+{{ valores[nombre] if valores[nombre] != '' else '—' }}
+{%- endmacro %}
+{% block contenido %}
+<div class="encabezado-pagina">
+  <div>
+    <h1>{{ r['fecha'] | fecha_larga }}</h1>
+    <p class="sub">{{ r['predicador'] }}{% if r['tema'] %} — {{ r['tema'] }}{% endif %}</p>
+  </div>
+  <div class="acciones-pagina">
+    <a class="btn principal" href="{{ url_for('descargar_excel', rid=r['id']) }}">Descargar Excel</a>
+    <a class="btn" href="{{ url_for('editar', rid=r['id']) }}">Editar</a>
+    <form method="post" action="{{ url_for('eliminar', rid=r['id']) }}" class="enlinea"
+          onsubmit="return confirm('¿Eliminar este reporte?');">
+      <button class="btn peligro" type="submit">Eliminar</button>
+    </form>
+  </div>
+</div>
+
+<section class="resumen">
+  <div class="metrica grande"><span class="valor">{{ r['asist_total'] }}</span><span class="etiq">asistencia presencial total</span></div>
+  <div class="metrica"><span class="valor">{{ r['en_linea'] }}</span><span class="etiq">asistencia en línea</span></div>
+  <div class="metrica"><span class="valor">{{ r['entrada_total'] | dinero }}</span><span class="etiq">entrada total (DLLS)</span></div>
+  <div class="metrica"><span class="valor">{{ r['clima'] or '—' }}</span><span class="etiq">clima</span></div>
+</section>
+
+<section class="tarjeta">
+  <h2>Resumen por servicio</h2>
+  <div class="tabla-scroll">
+  <table class="tabla-captura">
+    <thead>
+      <tr>
+        <th>Concepto</th>
+        {% for s, hora in servicios %}<th>{{ hora }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      <tr><th class="concepto">Asistentes al servicio</th>{% for s, h in servicios %}<td class="num">{{ r['asist_' ~ s] }}</td>{% endfor %}</tr>
+      <tr><th class="concepto">Asistencia niños / NEON</th>{% for s, h in servicios %}<td class="num">{{ r['ninos_' ~ s] }}</td>{% endfor %}</tr>
+      <tr><th class="concepto">Total de voluntarios</th>{% for s, h in servicios %}<td class="num">{{ r['vol_total_' ~ s] }}</td>{% endfor %}</tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+{% for titulo, grupo in secciones %}
+<section class="tarjeta">
+  <h2>{{ titulo }}</h2>
+  <div class="tabla-scroll">
+  <table class="tabla-captura">
+    <thead>
+      <tr>
+        <th>Concepto</th>
+        {% for s, hora in servicios %}<th>{{ hora }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for campo, etiqueta in grupo %}
+      <tr>
+        <th class="concepto">{{ etiqueta }}</th>
+        {% for s, hora in servicios %}
+        <td class="num">{{ celda(campo ~ '_' ~ s) }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endfor %}
+
+<section class="tarjeta">
+  <h2>Kids — asistencia por edad</h2>
+  <div class="tabla-scroll">
+  <table class="tabla-captura">
+    <thead>
+      <tr><th>Edad / grado</th><th>10:00 a.m.</th><th>12:00 p.m.</th></tr>
+    </thead>
+    <tbody>
+      {% for campo, etiqueta in kids %}
+      <tr>
+        <th class="concepto">{{ etiqueta }}</th>
+        <td class="num">{{ celda(campo ~ '_s1') }}</td>
+        <td class="num">{{ celda(campo ~ '_s2') }}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <th class="concepto">Combinado de la tarde (6:00 p.m.)</th>
+        <td class="num" colspan="2">
+          {% for campo, etiqueta in kids_s3 %}{{ etiqueta }}: {{ celda(campo ~ '_s3') }}{% if not loop.last %} · {% endif %}{% endfor %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="tarjeta">
+  <h2>Sábado 5:00 p.m. y universitarios</h2>
+  <div class="tabla-scroll">
+  <table class="tabla-captura">
+    <thead>
+      <tr><th>Concepto</th><th>Col. D:E</th><th>Col. F</th></tr>
+    </thead>
+    <tbody>
+      {% for campo, etiqueta in sabado %}
+      <tr>
+        <th class="concepto">{{ etiqueta }}</th>
+        <td class="num">{{ celda(campo ~ '_de') }}</td>
+        <td class="num">{{ celda(campo ~ '_f') }}</td>
+      </tr>
+      {% endfor %}
+      {% for campo, etiqueta in vector %}
+      <tr>
+        <th class="concepto">{{ etiqueta }}</th>
+        <td class="num">{% if loop.first %}{{ celda(campo) }}{% else %}—{% endif %}</td>
+        <td class="num">{% if not loop.first %}{{ celda(campo) }}{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="tarjeta">
+  <h2>Grupos de vida</h2>
+  <div class="fila-campos">
+    {% for campo, etiqueta in grupos_vida %}
+    <label>{{ etiqueta }}
+      <input class="num" value="{{ celda(campo) }}" disabled>
+    </label>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="tarjeta">
+  <h2>Redes sociales</h2>
+  <div class="fila-campos">
+    {% for campo, etiqueta in redes %}
+    <label>{{ etiqueta }}
+      <input class="num" value="{{ celda(campo) }}" disabled>
+    </label>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="tarjeta">
+  <h2>Datos financieros (DLLS)</h2>
+  <div class="fila-campos">
+    {% for campo, etiqueta in financieros %}
+    <label>{{ etiqueta }}
+      <input class="num" value="{{ celda(campo) }}" disabled>
+    </label>
+    {% endfor %}
+  </div>
+  <p class="ayuda">Entrada total: <strong>{{ r['entrada_total'] | dinero }}</strong></p>
+</section>
+
+{% if r['notas'] %}
+<section class="tarjeta">
+  <h2>Notas</h2>
+  <p class="notas">{{ r['notas'] }}</p>
+</section>
+{% endif %}
+
+<div class="barra-guardar">
+  <a class="btn principal" href="{{ url_for('descargar_excel', rid=r['id']) }}">Descargar Excel</a>
+  <a class="btn" href="{{ url_for('index') }}">Volver</a>
+</div>
+{% endblock %}
