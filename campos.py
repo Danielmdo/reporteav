@@ -110,7 +110,9 @@ COLUMNAS_CALC = [
     'ninos_s1', 'ninos_s2', 'ninos_s3',
     'asist_total',
     'vol_total_s1', 'vol_total_s2', 'vol_total_s3',
-    'en_linea', 'entrada_total',
+    'total_ninos_s1', 'total_ninos_s2', 'total_ninos_s3',
+    'reunion_de', 'reunion_f',
+    'en_linea', 'entrada_de', 'entrada_f', 'entrada_total',
 ]
 
 ETIQUETAS = {}
@@ -192,13 +194,17 @@ def calcular_totales(v):
                                + _n(v, f'neon_primaria_{s}')
                                + _n(v, f'jovenes_{s}'))
     for s in ('s1', 's2'):
-        t[f'ninos_{s}'] = (sum(_n(v, f'{c}_{s}') for c, _ in GRUPO_KIDS)
-                           + _n(v, f'neon_jovenes_{s}'))
-    t['ninos_s3'] = (_n(v, 'kids_maternal_s3') + _n(v, 'kids_kinder_s3')
-                     + _n(v, 'kids_grados_s3') + _n(v, 'neon_jovenes_s3'))
+        t[f'total_ninos_{s}'] = sum(_n(v, f'{c}_{s}') for c, _ in GRUPO_KIDS)
+        t[f'ninos_{s}'] = t[f'total_ninos_{s}'] + _n(v, f'neon_jovenes_{s}')
+    t['total_ninos_s3'] = (_n(v, 'kids_maternal_s3') + _n(v, 'kids_kinder_s3')
+                           + _n(v, 'kids_grados_s3'))
+    t['ninos_s3'] = t['total_ninos_s3'] + _n(v, 'neon_jovenes_s3')
     t['asist_total'] = (t['asist_s1'] + t['asist_s2'] + t['asist_s3']
                         + t['ninos_s1'] + t['ninos_s2'] + t['ninos_s3'])
+    t['reunion_de'] = _n(v, 'sab_secundarias_de') + _n(v, 'sab_preparatorias_de')
+    t['reunion_f'] = _n(v, 'sab_secundarias_f') + _n(v, 'sab_preparatorias_f')
     t['en_linea'] = _n(v, 'fb_rep15') + _n(v, 'yt_views')
-    t['entrada_total'] = (_n(v, 'online_dlls') + _n(v, 'efectivo_dlls')
-                          + _n(v, 'efectivo_f_dlls'))
+    t['entrada_de'] = _n(v, 'online_dlls') + _n(v, 'efectivo_dlls')
+    t['entrada_f'] = _n(v, 'efectivo_f_dlls')
+    t['entrada_total'] = t['entrada_de'] + t['entrada_f']
     return t

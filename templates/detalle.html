@@ -87,9 +87,14 @@
       </tr>
       {% endfor %}
       <tr>
+        <th class="concepto">Total de niños</th>
+        <td class="num">{{ r['total_ninos_s1'] | numero }}</td>
+        <td class="num">{{ r['total_ninos_s2'] | numero }}</td>
+      </tr>
+      <tr>
         <th class="concepto">Combinado de la tarde (6:00 p.m.)</th>
         <td class="num" colspan="2">
-          {% for campo, etiqueta in kids_s3 %}{{ etiqueta }}: {{ celda(campo ~ '_s3') }}{% if not loop.last %} · {% endif %}{% endfor %}
+          {% for campo, etiqueta in kids_s3 %}{{ etiqueta }}: {{ celda(campo ~ '_s3') }}{% if not loop.last %} · {% endif %}{% endfor %} · Total: {{ r['total_ninos_s3'] | numero }}
         </td>
       </tr>
     </tbody>
@@ -112,6 +117,11 @@
         <td class="num">{{ celda(campo ~ '_f') }}</td>
       </tr>
       {% endfor %}
+      <tr class="fila-total">
+        <th class="concepto">Reunión general</th>
+        <td class="num">{{ r['reunion_de'] | numero }}</td>
+        <td class="num">{{ r['reunion_f'] | numero }}</td>
+      </tr>
       {% for campo, etiqueta in vector %}
       <tr>
         <th class="concepto">{{ etiqueta }}</th>
@@ -155,7 +165,7 @@
     </label>
     {% endfor %}
   </div>
-  <p class="ayuda">Entrada total: <strong>{{ r['entrada_total'] | dinero }}</strong></p>
+  <p class="ayuda">Entrada total: <strong>{{ r['entrada_total'] | dinero }}</strong> — col. D:E: {{ r['entrada_de'] | dinero }} · col. F: {{ r['entrada_f'] | dinero }}</p>
 </section>
 
 {% if r['notas'] %}

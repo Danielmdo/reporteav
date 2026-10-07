@@ -40,7 +40,10 @@ COLUMNAS_CSV = ['id', 'fecha', 'predicador', 'tema', 'clima',
                 'ninos_s1', 'ninos_s2', 'ninos_s3',
                 'asist_total',
                 'vol_total_s1', 'vol_total_s2', 'vol_total_s3',
-                'en_linea', 'entrada_total', 'notas', 'creado_en']
+                'total_ninos_s1', 'total_ninos_s2', 'total_ninos_s3',
+                'reunion_de', 'reunion_f',
+                'en_linea', 'entrada_de', 'entrada_f', 'entrada_total',
+                'notas', 'creado_en']
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('CLAVE_SECRETA') or 'reportes-av-clave-local'
@@ -136,6 +139,9 @@ def guardar(datos, rid=None):
     conn = conectar()
     try:
         if rid is None:
+            datos = dict(datos)
+            datos['creado_en'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            columnas = columnas + ['creado_en']
             marcadores = ', '.join('?' * len(columnas))
             sql = (f"INSERT INTO reportes ({', '.join(columnas)}) "
                    f"VALUES ({marcadores}) RETURNING id")

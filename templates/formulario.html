@@ -28,6 +28,44 @@
   </section>
 
   <section class="tarjeta">
+    <h2>Totales en vivo (como el Excel)</h2>
+    <div class="tabla-scroll">
+    <table class="tabla-captura resumen-vivo">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          {% for s, hora in servicios %}<th>{{ hora }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="concepto">Asistentes al servicio</th>
+          {% for s, hora in servicios %}<td class="num" id="t-asist-{{ s }}">0</td>{% endfor %}
+        </tr>
+        <tr>
+          <th class="concepto">Asistencia niños / NEON</th>
+          {% for s, hora in servicios %}<td class="num" id="t-ninos-tot-{{ s }}">0</td>{% endfor %}
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th class="concepto">Asistencia presencial total</th>
+          <td class="num" colspan="3" id="t-total">0</td>
+        </tr>
+        <tr>
+          <th class="concepto">Asistencia en línea</th>
+          <td class="num" colspan="3" id="t-linea">0</td>
+        </tr>
+        <tr>
+          <th class="concepto">Entrada total (DLLS)</th>
+          <td class="num" colspan="3" id="t-entrada-total">$ 0.00</td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>
+  </section>
+
+  <section class="tarjeta">
     <h2>Redes sociales</h2>
     <p class="ayuda">Corresponden al servicio de las 10:00 a.m., igual que en el Excel. La asistencia en línea se calcula como Rep. 15 seg + Views de YouTube.</p>
     <div class="fila-campos">
@@ -60,6 +98,14 @@
         </tr>
         {% endfor %}
       </tbody>
+      {% if titulo == 'Voluntarios' %}
+      <tfoot>
+        <tr>
+          <th class="concepto">Total de voluntarios</th>
+          {% for s, hora in servicios %}<td class="num" id="t-vol-{{ s }}">0</td>{% endfor %}
+        </tr>
+      </tfoot>
+      {% endif %}
     </table>
     </div>
   </section>
@@ -81,6 +127,13 @@
         </tr>
         {% endfor %}
       </tbody>
+      <tfoot>
+        <tr>
+          <th class="concepto">Total de niños</th>
+          <td class="num" id="t-ninos-s1">0</td>
+          <td class="num" id="t-ninos-s2">0</td>
+        </tr>
+      </tfoot>
     </table>
     </div>
     <h3>Servicio de 6:00 p.m.</h3>
@@ -91,6 +144,9 @@
         {{ campo_num(campo ~ '_s3', valores[campo ~ '_s3']) }}
       </label>
       {% endfor %}
+      <label class="vacio-campo">Total niños (6:00 p.m.)
+        <span class="valor-vivo" id="t-ninos-s3">0</span>
+      </label>
     </div>
   </section>
 
@@ -111,6 +167,13 @@
         </tr>
         {% endfor %}
       </tbody>
+      <tfoot>
+        <tr>
+          <th class="concepto">Reunión general</th>
+          <td class="num" id="t-reunion-de">0</td>
+          <td class="num" id="t-reunion-f">0</td>
+        </tr>
+      </tfoot>
     </table>
     </div>
     <h3>Universitarios</h3>
@@ -143,6 +206,7 @@
       </label>
       {% endfor %}
     </div>
+    <p class="ayuda">Entrada total — col. D:E: <strong id="t-entrada-de">$ 0.00</strong> · col. F: <strong id="t-entrada-f">$ 0.00</strong></p>
   </section>
 
   <section class="tarjeta">
@@ -157,4 +221,77 @@
     <a class="btn" href="{{ url_for('index') }}">Cancelar</a>
   </div>
 </form>
+<script>
+(function () {
+  'use strict';
+  var KIDS = ['kids_maternal1', 'kids_maternal2', 'kids_kinder1', 'kids_kinder23',
+              'kids_g1', 'kids_g2', 'kids_g3', 'kids_g4'];
+  var SERV = ['s1', 's2', 's3'];
+
+  function val(n) {
+    var e = document.querySelector('[name="' + n + '"]');
+    if (!e) return 0;
+    var v = parseFloat(e.value);
+    return isNaN(v) ? 0 : v;
+  }
+  function poner(id, v) {
+    var e = document.getElementById(id);
+    if (e) e.textContent = v;
+  }
+  function dinero(v) {
+    return '$ ' + (v || 0).toLocaleString('en-US',
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function entero(v) {
+    return Math.round(v * 100) % 100 === 0 ? Math.round(v) : Math.round(v * 100) / 100;
+  }
+
+  function calcular() {
+    var asist = {}, ninos = {}, s;
+    for (var i = 0; i < SERV.length; i++) {
+      s = SERV[i];
+      asist[s] = val('primeras_impresiones_' + s) - val('anfitriones_' + s)
+        - val('estacionamiento_' + s) - val('jardin_' + s)
+        + val('crece_' + s) + val('kids_' + s) + val('neon_primaria_' + s)
+        + val('jovenes_' + s) + val('auditorio_' + s);
+      var vol = val('primeras_impresiones_' + s) + val('crece_' + s)
+        + val('eventos_' + s) + val('alabanza_' + s) + val('produccion_' + s)
+        + val('kids_' + s) + val('transporte_' + s) + val('contadores_' + s)
+        + val('sirviendo_en_amor_' + s) + val('neon_primaria_' + s)
+        + val('jovenes_' + s);
+      poner('t-vol-' + s, entero(vol));
+      poner('t-asist-' + s, entero(asist[s]));
+    }
+    for (var j = 0; j < 2; j++) {
+      s = SERV[j];
+      var t = 0;
+      for (var k = 0; k < KIDS.length; k++) t += val(KIDS[k] + '_' + s);
+      poner('t-ninos-' + s, entero(t));
+      ninos[s] = t + val('neon_jovenes_' + s);
+      poner('t-ninos-tot-' + s, entero(ninos[s]));
+    }
+    var t3 = val('kids_maternal_s3') + val('kids_kinder_s3') + val('kids_grados_s3');
+    poner('t-ninos-s3', entero(t3));
+    ninos.s3 = t3 + val('neon_jovenes_s3');
+    poner('t-ninos-tot-s3', entero(ninos.s3));
+    var presencial = asist.s1 + asist.s2 + asist.s3
+      + ninos.s1 + ninos.s2 + ninos.s3;
+    poner('t-total', entero(presencial));
+    poner('t-linea', entero(val('fb_rep15') + val('yt_views')));
+    poner('t-reunion-de', entero(val('sab_secundarias_de') + val('sab_preparatorias_de')));
+    poner('t-reunion-f', entero(val('sab_secundarias_f') + val('sab_preparatorias_f')));
+    var entradaDe = val('online_dlls') + val('efectivo_dlls');
+    var entradaF = val('efectivo_f_dlls');
+    poner('t-entrada-de', dinero(entradaDe));
+    poner('t-entrada-f', dinero(entradaF));
+    poner('t-entrada-total', dinero(entradaDe + entradaF));
+  }
+
+  var form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('input', calcular);
+    calcular();
+  }
+})();
+</script>
 {% endblock %}

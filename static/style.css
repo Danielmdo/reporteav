@@ -112,6 +112,24 @@ table { border-collapse: collapse; width: 100%; }
   color: #374151; background: #e9ecf1;
   text-align: center;
 }
+.tabla-captura tfoot th, .tabla-captura tfoot td {
+  background: #eef0f4; font-weight: 700;
+  border-top: 2px solid var(--borde-campo);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.tabla-captura tfoot th { text-align: left; }
+.fila-total th, .fila-total td {
+  background: #eef0f4; font-weight: 700;
+  border-top: 2px solid var(--borde-campo);
+}
+.resumen-vivo tfoot td { font-size: 1rem; color: var(--primario-osc); }
+.valor-vivo {
+  display: block;
+  font-weight: 700; font-size: 1.05rem;
+  padding: 9px 0 2px;
+  font-variant-numeric: tabular-nums;
+  color: var(--primario-osc);
+}
 .tabla-captura tbody tr:nth-child(even) td { background: #f7f8fa; }
 .tabla-captura .concepto {
   font-weight: 600; color: #1f2937; white-space: nowrap; background: #f1f3f6;

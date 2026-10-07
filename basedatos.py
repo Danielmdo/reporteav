@@ -10,7 +10,7 @@ TURSO_TOKEN = os.environ.get('TURSO_AUTH_TOKEN', '').strip()
 EN_VERCEL = bool(os.environ.get('VERCEL'))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RUTA_BD_LOCAL = os.path.join(BASE_DIR, 'datos', 'reportes.db')
+RUTA_BD_LOCAL = os.environ.get('RUTA_BD') or os.path.join(BASE_DIR, 'datos', 'reportes.db')
 
 MODO = 'turso' if (TURSO_URL and TURSO_TOKEN) else 'sqlite'
 
@@ -25,7 +25,8 @@ class Fila(dict):
 
 
 class Resultado:
-    def __init__(self, filas):
+    def __init__(self, columnas, filas):
+        self.columnas = columnas
         self._filas = filas
 
     def fetchone(self):
@@ -71,7 +72,7 @@ class ConexionTurso:
                             for i, c in enumerate(res.get('cols', []))]
                 filas = [[_decodificar_valor(celda) for celda in fila]
                          for fila in res.get('rows', [])]
-        return Resultado([Fila(zip(columnas, f)) for f in filas])
+        return Resultado(columnas, [Fila(zip(columnas, f)) for f in filas])
 
     def commit(self):
         pass
@@ -108,24 +109,27 @@ def _decodificar_valor(celda):
     return valor
 
 
-def _sentencias_esquema():
+def _columnas_esperadas():
     import campos
-    defs = ['id INTEGER PRIMARY KEY AUTOINCREMENT',
-            'fecha TEXT NOT NULL',
-            'clima TEXT',
-            "predicador TEXT NOT NULL DEFAULT ''",
-            'tema TEXT']
-    defs += [f'{c} INTEGER' for c in campos.COLUMNAS_ENTEROS]
-    defs += [f'{c} REAL' for c in campos.COLUMNAS_REALES]
-    defs.append('notas TEXT')
-    defs += [f'{c} REAL' for c in campos.COLUMNAS_CALC]
-    defs += ["creado_en TEXT DEFAULT (datetime('now', 'localtime'))",
-             'actualizado_en TEXT']
-    return [
-        'CREATE TABLE IF NOT EXISTS reportes (\n  ' + ',\n  '.join(defs) + '\n)',
-        'CREATE INDEX IF NOT EXISTS idx_reportes_fecha ON reportes (fecha)',
-        'CREATE INDEX IF NOT EXISTS idx_reportes_predicador ON reportes (predicador)',
-    ]
+    cols = [('id', 'INTEGER PRIMARY KEY AUTOINCREMENT'),
+            ('fecha', 'TEXT NOT NULL'),
+            ('clima', 'TEXT'),
+            ('predicador', "TEXT NOT NULL DEFAULT ''"),
+            ('tema', 'TEXT')]
+    cols += [(c, 'INTEGER') for c in campos.COLUMNAS_ENTEROS]
+    cols += [(c, 'REAL') for c in campos.COLUMNAS_REALES]
+    cols.append(('notas', 'TEXT'))
+    cols += [(c, 'REAL') for c in campos.COLUMNAS_CALC]
+    cols.append(('creado_en', "TEXT DEFAULT (datetime('now', 'localtime'))"))
+    cols.append(('actualizado_en', 'TEXT'))
+    return cols
+
+
+def _nombres_columnas(conn):
+    res = conn.execute('SELECT * FROM reportes LIMIT 0')
+    if hasattr(res, 'description'):
+        return {d[0] for d in res.description}
+    return set(res.columnas)
 
 
 def _abrir():
@@ -144,13 +148,20 @@ def _abrir():
 def conectar():
     global _esquema_listo
     conn = _abrir()
-    if not _esquema_listo:
-        try:
-            for sentencia in _sentencias_esquema():
-                conn.execute(sentencia)
-            conn.commit()
-            _esquema_listo = True
-        except Exception:
-            conn.close()
-            raise
+    if _esquema_listo:
+        return conn
+    try:
+        defs = ',\n  '.join(f'{n} {t}' for n, t in _columnas_esperadas())
+        conn.execute(f'CREATE TABLE IF NOT EXISTS reportes (\n  {defs}\n)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_reportes_fecha ON reportes (fecha)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_reportes_predicador ON reportes (predicador)')
+        existentes = _nombres_columnas(conn)
+        for nombre, tipo in _columnas_esperadas():
+            if nombre not in existentes:
+                conn.execute(f'ALTER TABLE reportes ADD COLUMN {nombre} {tipo.split()[0]}')
+        conn.commit()
+        _esquema_listo = True
+    except Exception:
+        conn.close()
+        raise
     return conn
