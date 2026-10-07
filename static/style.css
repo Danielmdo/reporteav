@@ -197,9 +197,6 @@ table { border-collapse: collapse; width: 100%; }
 .vacio { text-align: center; padding: 40px 20px; color: var(--gris); }
 .vacio .btn { margin-top: 8px; }
 
-.pie { padding-top: 10px; padding-bottom: 26px; color: var(--gris); font-size: .82rem; }
-.pie code { background: #e9ebee; border-radius: 5px; padding: 1px 5px; }
-
 @media (max-width: 640px) {
   .barra-interna { flex-direction: column; gap: 8px; align-items: flex-start; }
   .tabla-captura td input { min-width: 72px; }
